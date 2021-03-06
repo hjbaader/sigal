@@ -302,7 +302,8 @@ class Album:
             self.dst_path = settings['destination']
         else:
             self.src_path = join(settings['source'], path)
-            self.dst_path = join(settings['destination'], path)
+            self.dst_path = join(settings['destination'], path[:-len('/g')])
+            self.name = self.dst_path.split(os.path.sep)[-1]
 
         self.logger = logging.getLogger(__name__)
         self._get_metadata()
@@ -357,8 +358,8 @@ class Album:
         self.description = ''
         self.meta = {}
         # default: get title from directory name
-        self.title = os.path.basename(self.path if self.path != '.'
-                                      else self.src_path)
+        self.title = os.path.basename(self.path[:-len('/g')] if self.path != '.'
+                                      else self.src_path[:-len('/g')])
 
         if isfile(descfile):
             meta = read_markdown(descfile)
@@ -604,6 +605,9 @@ class Gallery:
                 print("\rCollecting albums " + next(progressChars), end="")
             relpath = os.path.relpath(path, src_path)
 
+            if not relpath.endswith('/g'):
+                continue
+
             # Test if the directory match the ignore_dirs settings
             if ignore_dirs and any(fnmatch.fnmatch(relpath, ignore)
                                    for ignore in ignore_dirs):
@@ -634,7 +638,7 @@ class Gallery:
                 self.logger.info('Skip empty album: %r', album)
             else:
                 album.create_output_directories()
-                albums[relpath] = album
+                albums[relpath[:-len('/g')]] = album
 
         if show_progress:
             print("\rCollecting albums, done.")
